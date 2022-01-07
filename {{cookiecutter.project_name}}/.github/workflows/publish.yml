@@ -1,0 +1,61 @@
+# This workflow will upload a Python Package using Twine when a release is created
+# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Upload Python Package
+
+on:
+  release:
+    types: [published]
+    tags:
+      - "v([0-9]+.){2}[0-9]+(-rc[0-9]+){0,1}"
+
+jobs:
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip wheel setuptools
+        pip install -r test-requirements.txt
+        pip install pytest pylint mypy
+{% raw %}
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+        aws-region: us-east-1
+{% endraw %}
+    - name: Analysing the code with pylint
+      run: |
+        pylint ./{{cookiecutter.package_name}}
+    - name: Run MyPy
+      run: |
+        mypy --config-file mypy.ini ./{{cookiecutter.package_name}}
+    - name: Test with pytest
+      run: |
+        pytest ./tests
+{% raw %}
+    - name: Build package
+      run: |
+        echo ${{ github.ref.name }}
+        python setup.py sdist bdist_wheel
+    - name: Publish package
+      env:
+        BUCKET_NAME: ${{ secrets.PYPI_BUCKET_NAME || 'pypi.avikuslab.com' }}
+      run: |
+        pip install s3pypi==1.0.0rc3
+        s3pypi dist/* --bucket $BUCKET_NAME
+{% endraw %}
