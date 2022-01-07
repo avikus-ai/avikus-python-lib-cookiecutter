@@ -1,8 +1,10 @@
 [MASTER]
 
 disable=
-    C0114,  #  module level docstring
-    C0115   # class level docstring
+    C0114,  # module level docstring
+    C0115,  # class level docstring
+    R0903,  # too-few-public-methods
+    W1203,  # fstring
 
 
 ignore=migrations,.venv
