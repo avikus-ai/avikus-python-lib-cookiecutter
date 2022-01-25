@@ -1,4 +1,4 @@
-# {{cookiecutter.package_name}} Package
+# {{cookiecutter.package_name}} library
 
 <br/>
 
